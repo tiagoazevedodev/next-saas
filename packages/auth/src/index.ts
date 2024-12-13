@@ -5,25 +5,20 @@ import {
   ForcedSubject,
   MongoAbility,
 } from '@casl/ability'
+
 import type { User } from './models/user'
 import { permissions } from './permissions'
+import type { ProjectSubject } from './subjects/project'
+import type { UserSubject } from './subjects/user'
 
-const actions = ['manage', 'invite', 'delete'] as const
-const subjects = ['User', 'all'] as const
-type AppAbilities = [
-  (typeof actions)[number],
-  (
-    | (typeof subjects)[number]
-    | ForcedSubject<Exclude<(typeof subjects)[number], 'all'>>
-  ),
-]
+type AppAbilities = UserSubject | ProjectSubject | ['manage', 'all']
 
 export type AppAbility = MongoAbility<AppAbilities>
 export const createAppAbility = createMongoAbility as CreateAbility<AppAbility>
 
 export function defineAbilityFor(user: User) {
   const builder = new AbilityBuilder(createAppAbility)
-  
+
   if (typeof permissions[user.role] !== 'function') {
     throw new Error(`No permissions defined for role "${user.role}."`)
   }
@@ -31,6 +26,6 @@ export function defineAbilityFor(user: User) {
   permissions[user.role](user, builder)
 
   const ability = builder.build()
-  
+
   return ability
 }
